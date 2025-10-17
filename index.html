@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rank Stratos - Professional SEO Analysis Tools</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <div class="logo-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                <span class="logo-text">Rank Stratos</span>
+            </div>
+            
+            <div class="nav-menu">
+                <a href="#about" class="nav-link">About</a>
+                <a href="#blog" class="nav-link">Blog</a>
+                <a href="#categories" class="nav-link">Categories</a>
+            </div>
+            
+            <div class="nav-actions">
+                <button class="search-btn">
+                    <i class="fas fa-search"></i>
+                </button>
+                <button class="login-btn">Login</button>
+                <button class="signup-btn">Sign Up</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <main class="hero-section">
+        <div class="hero-container">
+            <div class="hero-content">
+                <h1 class="hero-title">
+                    Find reliable SEO analysis tools that make your website outstanding
+                </h1>
+                <p class="hero-description">
+                    We provide professional website SEO detection services to help you quickly identify optimization opportunities, improve search engine rankings, and drive more traffic to your website.
+                </p>
+                
+                <!-- SEO Analysis Input -->
+                <div class="analysis-form">
+                    <div class="input-container">
+                        <input type="url" id="websiteUrl" placeholder="Enter your website URL (e.g., example.com)" class="url-input">
+                        <button id="analyzeBtn" class="analyze-btn">
+                            <i class="fas fa-search"></i>
+                            Analyze
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="hero-visual">
+                <div class="seo-tools-visual">
+                    <div class="main-tool">
+                        <div class="tool-button blue">
+                            <i class="fas fa-bars"></i>
+                        </div>
+                        <div class="tool-button orange">
+                            <i class="fas fa-code"></i>
+                        </div>
+                        <div class="tool-button gray">
+                            <i class="fas fa-search"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="connected-tools">
+                        <div class="tool-icon blue">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div class="tool-icon orange">
+                            <i class="fas fa-play"></i>
+                        </div>
+                        <div class="tool-icon orange">
+                            <i class="fas fa-folder"></i>
+                        </div>
+                        <div class="tool-icon gray">
+                            <i class="fas fa-cog"></i>
+                        </div>
+                        <div class="tool-icon grid">
+                            <i class="fas fa-th"></i>
+                        </div>
+                        <div class="tool-icon text">
+                            <span>SEO</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <h3>Analyzing your website...</h3>
+            <p>This may take a few moments</p>
+            <div id="progressMessages" class="progress-messages"></div>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    <section id="resultsSection" class="results-section hidden">
+        <div class="results-container">
+            <h2>SEO Analysis Report</h2>
+            <div id="resultsContent" class="results-content">
+                <!-- Results will be populated here -->
+            </div>
+        </div>
+    </section>
+
+    <script src="script.js"></script>
+</body>
+</html>

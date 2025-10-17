@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEO分析测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+    </style>
+</head>
+<body>
+    <h1>SEO分析系统测试</h1>
+    <div id="test-results"></div>
+
+    <script>
+        async function testSEOAnalysis() {
+            const resultsDiv = document.getElementById('test-results');
+            
+            try {
+                // 测试API调用
+                const response = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: 'https://example.com' })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                // 显示测试结果
+                resultsDiv.innerHTML = `
+                    <div class="test-result success">
+                        <h3>✅ API调用成功</h3>
+                        <p>总分: ${data.totalScore}</p>
+                    </div>
+                `;
+                
+                // 测试每个指标的具体数据
+                for (const [key, metricData] of Object.entries(data.results)) {
+                    const specificData = metricData.specificData;
+                    const hasData = specificData && Object.keys(specificData).length > 0;
+                    
+                    resultsDiv.innerHTML += `
+                        <div class="test-result ${hasData ? 'success' : 'error'}">
+                            <h4>${key}</h4>
+                            <p>分数: ${metricData.score}</p>
+                            <p>具体数据: ${hasData ? '✅ 有数据' : '❌ 无数据'}</p>
+                            ${hasData ? `<pre>${JSON.stringify(specificData, null, 2)}</pre>` : ''}
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="test-result error">
+                        <h3>❌ 测试失败</h3>
+                        <p>错误: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // 页面加载后自动运行测试
+        document.addEventListener('DOMContentLoaded', testSEOAnalysis);
+    </script>
+</body>
+</html>
+
+
