@@ -1123,15 +1123,14 @@ class SEOAnalyzer {
         // 获取关键信息
         const keyInfo = this.extractKeyInfo(metric.name, result);
         
+        // 获取分数和状态
+        const score = result.score;
+        const status = result.status;
+        const statusClass = `score-${status}`;
+        
         card.innerHTML = `
-            <div class="summary-metric-header">
-                <div class="summary-metric-title">
-                    <i class="${metric.icon}"></i>
-                    <span>${metric.name}</span>
-                </div>
-            </div>
-            <div class="summary-metric-details">
-                ${result.details ? result.details : '暂无问题'}
+            <div class="summary-score ${statusClass}">
+                ${score}
             </div>
             <div class="summary-key-info">
                 ${keyInfo}
@@ -1142,78 +1141,39 @@ class SEOAnalyzer {
     }
     
     extractKeyInfo(metricName, result) {
-        const specificData = result.specificData || {};
-        
-        switch (metricName) {
-            case 'Page Speed':
-                return `
-                    <strong>页面大小:</strong> ${specificData.totalSize || 0}MB<br>
-                    <strong>图片数量:</strong> ${specificData.totalImages || 0}个<br>
-                    <strong>大图片:</strong> ${specificData.largeImages || 0}个
-                `;
-            case 'Mobile Optimization':
-                return `
-                    <strong>Viewport:</strong> ${specificData.hasViewport ? '✓' : '✗'}<br>
-                    <strong>字体大小:</strong> ${specificData.fontSize || 0}px<br>
-                    <strong>小触摸目标:</strong> ${specificData.smallTouchTargets || 0}个
-                `;
-            case 'Meta Tags':
-                return `
-                    <strong>标题长度:</strong> ${specificData.titleLength || 0}字符<br>
-                    <strong>描述长度:</strong> ${specificData.descriptionLength || 0}字符<br>
-                    <strong>重复标题:</strong> ${specificData.duplicateTitles || 0}个
-                `;
-            case 'Heading Structure':
-                return `
-                    <strong>H1标签:</strong> ${specificData.h1Count || 0}个<br>
-                    <strong>H2标签:</strong> ${specificData.h2Count || 0}个<br>
-                    <strong>层级跳跃:</strong> ${specificData.skippedLevels || 0}次
-                `;
-            case 'Image Optimization':
-                return `
-                    <strong>总图片:</strong> ${specificData.totalImages || 0}个<br>
-                    <strong>缺少Alt:</strong> ${specificData.missingAlt || 0}个<br>
-                    <strong>WebP格式:</strong> ${specificData.webpImages || 0}个
-                `;
-            case 'Internal Linking':
-                return `
-                    <strong>总链接:</strong> ${specificData.totalLinks || 0}个<br>
-                    <strong>断链:</strong> ${specificData.brokenLinks || 0}个<br>
-                    <strong>孤立页面:</strong> ${specificData.orphanPages || 0}个
-                `;
-            case 'SSL Certificate':
-                return `
-                    <strong>SSL证书:</strong> ${specificData.hasSSL ? '✓' : '✗'}<br>
-                    <strong>HSTS:</strong> ${specificData.hasHSTS ? '✓' : '✗'}<br>
-                    <strong>混合内容:</strong> ${specificData.mixedContent || 0}个
-                `;
-            case 'Content Quality':
-                return `
-                    <strong>字数:</strong> ${specificData.wordCount || 0}字<br>
-                    <strong>关键词密度:</strong> ${specificData.keywordDensity || 0}%<br>
-                    <strong>内部链接:</strong> ${specificData.internalLinks || 0}个
-                `;
-            case 'URL Structure':
-                return `
-                    <strong>URL长度:</strong> ${specificData.urlLength || 0}字符<br>
-                    <strong>URL深度:</strong> ${specificData.urlDepth || 0}层<br>
-                    <strong>包含关键词:</strong> ${specificData.hasKeyword ? '✓' : '✗'}
-                `;
-            case 'Robots.txt':
-                return `
-                    <strong>存在:</strong> ${specificData.hasRobotsTxt ? '✓' : '✗'}<br>
-                    <strong>引用Sitemap:</strong> ${specificData.hasSitemapReference ? '✓' : '✗'}<br>
-                    <strong>阻止CSS:</strong> ${specificData.blockingCSS ? '✗' : '✓'}
-                `;
-            case 'XML Sitemap':
-                return `
-                    <strong>存在:</strong> ${specificData.hasSitemap ? '✓' : '✗'}<br>
-                    <strong>页面数:</strong> ${specificData.totalPages || 0}个<br>
-                    <strong>包含图片:</strong> ${specificData.includesImages ? '✓' : '✗'}
-                `;
-            default:
-                return '暂无关键信息';
+        // 获取对应的metricKey
+        const metricKey = Object.keys(this.metrics).find(key => this.metrics[key].name === metricName);
+        if (!metricKey) {
+            return '暂无数据';
         }
+        
+        // 使用详细报告的逻辑生成HTML
+        const specificDataHtml = this.generateSpecificDataHtml(metricKey, result.specificData);
+        
+        // 从HTML中提取数据项，转换为概览格式
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = specificDataHtml;
+        
+        const dataItems = tempDiv.querySelectorAll('.data-item');
+        let summaryHtml = '';
+        
+        dataItems.forEach((item, index) => {
+            const label = item.querySelector('.data-label');
+            const value = item.querySelector('.data-value');
+            
+            if (label && value) {
+                // 简化标签名称
+                const labelText = label.textContent.replace(/[:：]$/, '');
+                const valueText = value.textContent;
+                
+                summaryHtml += `<strong>${labelText}:</strong> ${valueText}`;
+                if (index < dataItems.length - 1) {
+                    summaryHtml += '<br>';
+                }
+            }
+        });
+        
+        return summaryHtml || '暂无数据';
     }
 
     collectAllIssues(results) {
@@ -1283,29 +1243,42 @@ class SEOAnalyzer {
         };
     }
 
+    getAnalyzedUrl() {
+        const urlInput = document.getElementById('websiteUrl');
+        return urlInput ? urlInput.value.trim() : 'Unknown';
+    }
+
     updateReportTitle(totalScore) {
         const titleElement = document.querySelector('.results-container h2');
         const statusClass = `score-${totalScore.status}`;
-        const statusText = this.getStatusText(totalScore.status);
+        
+        // 获取分析的网址
+        const analyzedUrl = this.getAnalyzedUrl();
         
         // 更新标题内容
         titleElement.innerHTML = `
-            <span class="score-title">SEO Score</span>
-            <span class="score-value ${statusClass}">${totalScore.score}/120</span>
-            <span class="score-status ${statusClass}">${statusText}</span>
+            <span class="score-title">Score</span>
+            <span class="score-value ${statusClass}">${totalScore.score}<span class="score-max">/120</span></span>
         `;
         
         // 在标题后面添加计算方式注释
         const calculationNote = document.createElement('div');
         calculationNote.className = 'score-calculation-note';
         calculationNote.innerHTML = `
-            <p><strong>动态权重评分</strong> - 基于Google SEO官方指南（2024年）</p>
-            <ul>
-                <li><strong>内容网站：</strong>内容质量(20%) > 页面速度(18%) > 移动优化(15%) > Meta标签(12%) > SSL证书(10%) > 其他</li>
-                <li><strong>功能网站：</strong>页面速度(25%) > 移动优化(20%) > SSL证书(18%) > 内部链接(10%) > 其他</li>
-                <li><strong>电商网站：</strong>移动优化(18%) > 页面速度(16%) > SSL证书(15%) > Meta标签(14%) > 其他</li>
-            </ul>
-            <p class="note">各项指标满分100分，根据网站类型加权计算后乘以1.2，最终满分120分</p>
+            <div class="calculation-header">
+                <span><strong>动态权重评分</strong> - 基于Google SEO官方指南（2024年）</span>
+                <button class="toggle-details-btn" onclick="toggleCalculationDetails()">
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+            </div>
+            <div class="calculation-details hidden">
+                <ul>
+                    <li><strong>内容网站：</strong>内容质量(20%) > 页面速度(18%) > 移动优化(15%) > Meta标签(12%) > SSL证书(10%) > 其他</li>
+                    <li><strong>功能网站：</strong>页面速度(25%) > 移动优化(20%) > SSL证书(18%) > 内部链接(10%) > 其他</li>
+                    <li><strong>电商网站：</strong>移动优化(18%) > 页面速度(16%) > SSL证书(15%) > Meta标签(14%) > 其他</li>
+                </ul>
+                <p class="note">各项指标满分100分，根据网站类型加权计算后乘以1.2，最终满分120分</p>
+            </div>
         `;
         
         // 将计算方式注释插入到标题后面
@@ -1313,15 +1286,6 @@ class SEOAnalyzer {
     }
 
 
-    getStatusText(status) {
-        const statusTexts = {
-            'excellent': '优秀',
-            'good': '良好',
-            'warning': '一般',
-            'poor': '较差'
-        };
-        return statusTexts[status] || '未知';
-    }
 
     getStatusIcon(status) {
         const statusIcons = {
@@ -1549,6 +1513,11 @@ class SEOAnalyzer {
     }
 
     generateSpecificDataHtml(metricKey, specificData) {
+        // 辅助函数：安全获取数值，避免false被转换为0
+        const getValue = (value, defaultValue = 0) => {
+            return value !== undefined && value !== null ? value : defaultValue;
+        };
+        
         let html = '<h4>具体数据:</h4><div class="data-grid">';
         
         switch(metricKey) {
@@ -1556,23 +1525,23 @@ class SEOAnalyzer {
                 html += `
                     <div class="data-item">
                         <span class="data-label">页面加载时间:</span>
-                        <span class="data-value">${specificData.loadTime}ms</span>
+                        <span class="data-value">${getValue(specificData.loadTime)}ms</span>
                     </div>
                     <div class="data-item">
                         <span class="data-label">页面总大小:</span>
-                        <span class="data-value">${specificData.totalSize}KB</span>
+                        <span class="data-value">${getValue(specificData.totalSize)}KB</span>
                     </div>
                     <div class="data-item">
                         <span class="data-label">图片资源大小:</span>
-                        <span class="data-value">${specificData.imageSize}KB</span>
+                        <span class="data-value">${getValue(specificData.imageSize)}KB</span>
                     </div>
                     <div class="data-item">
                         <span class="data-label">CSS文件大小:</span>
-                        <span class="data-value">${specificData.cssSize}KB</span>
+                        <span class="data-value">${getValue(specificData.cssSize)}KB</span>
                     </div>
                     <div class="data-item">
                         <span class="data-label">JavaScript文件大小:</span>
-                        <span class="data-value">${specificData.jsSize}KB</span>
+                        <span class="data-value">${getValue(specificData.jsSize)}KB</span>
                     </div>
                 `;
                 break;
@@ -1584,15 +1553,15 @@ class SEOAnalyzer {
                     </div>
                     <div class="data-item">
                         <span class="data-label">触摸目标总数:</span>
-                        <span class="data-value">${specificData.touchTargets}个</span>
+                        <span class="data-value">${getValue(specificData.touchTargets)}个</span>
                     </div>
                     <div class="data-item">
                         <span class="data-label">过小触摸目标:</span>
-                        <span class="data-value">${specificData.smallTouchTargets}个</span>
+                        <span class="data-value">${getValue(specificData.smallTouchTargets)}个</span>
                     </div>
                     <div class="data-item">
                         <span class="data-label">字体大小:</span>
-                        <span class="data-value">${specificData.fontSize}px</span>
+                        <span class="data-value">${getValue(specificData.fontSize)}px</span>
                     </div>
                     <div class="data-item">
                         <span class="data-label">移动端菜单:</span>
@@ -1608,7 +1577,7 @@ class SEOAnalyzer {
                     </div>
                     <div class="data-item">
                         <span class="data-label">标题长度:</span>
-                        <span class="data-value">${specificData.titleLength}字符</span>
+                        <span class="data-value">${getValue(specificData.titleLength)}字符</span>
                     </div>
                     <div class="data-item">
                         <span class="data-label">描述:</span>
@@ -1616,7 +1585,7 @@ class SEOAnalyzer {
                     </div>
                     <div class="data-item">
                         <span class="data-label">描述长度:</span>
-                        <span class="data-value">${specificData.descriptionLength}字符</span>
+                        <span class="data-value">${getValue(specificData.descriptionLength)}字符</span>
                     </div>
                     <div class="data-item">
                         <span class="data-label">关键词标签:</span>
@@ -1628,7 +1597,7 @@ class SEOAnalyzer {
                     </div>
                     <div class="data-item">
                         <span class="data-label">重复标题:</span>
-                        <span class="data-value">${specificData.duplicateTitles}个</span>
+                        <span class="data-value">${getValue(specificData.duplicateTitles)}个</span>
                     </div>
                 `;
                 break;
@@ -1660,11 +1629,11 @@ class SEOAnalyzer {
                     </div>
                     <div class="data-item">
                         <span class="data-label">缺失标题页面:</span>
-                        <span class="data-value">${specificData.missingHeadings}个</span>
+                        <span class="data-value">${getValue(specificData.missingHeadings)}个</span>
                     </div>
                     <div class="data-item">
                         <span class="data-label">标题层级跳跃:</span>
-                        <span class="data-value">${specificData.skippedLevels}次</span>
+                        <span class="data-value">${getValue(specificData.skippedLevels)}次</span>
                     </div>
                 `;
                 break;
@@ -1672,23 +1641,23 @@ class SEOAnalyzer {
                 html += `
                     <div class="data-item">
                         <span class="data-label">图片总数:</span>
-                        <span class="data-value">${specificData.totalImages}张</span>
+                        <span class="data-value">${getValue(specificData.totalImages)}张</span>
                     </div>
                     <div class="data-item">
                         <span class="data-label">过大图片:</span>
-                        <span class="data-value">${specificData.largeImages}张</span>
+                        <span class="data-value">${getValue(specificData.largeImages)}张</span>
                     </div>
                     <div class="data-item">
                         <span class="data-label">缺少Alt属性:</span>
-                        <span class="data-value">${specificData.missingAlt}张</span>
+                        <span class="data-value">${getValue(specificData.missingAlt)}张</span>
                     </div>
                     <div class="data-item">
                         <span class="data-label">WebP格式图片:</span>
-                        <span class="data-value">${specificData.webpImages}张</span>
+                        <span class="data-value">${getValue(specificData.webpImages)}张</span>
                     </div>
                     <div class="data-item">
                         <span class="data-label">懒加载图片:</span>
-                        <span class="data-value">${specificData.lazyLoaded}张</span>
+                        <span class="data-value">${getValue(specificData.lazyLoaded)}张</span>
                     </div>
                 `;
                 break;
@@ -1696,7 +1665,7 @@ class SEOAnalyzer {
                 html += `
                     <div class="data-item">
                         <span class="data-label">链接总数:</span>
-                        <span class="data-value">${specificData.totalLinks}个</span>
+                        <span class="data-value">${getValue(specificData.totalLinks)}个</span>
                     </div>
                     <div class="data-item">
                         <span class="data-label">死链接:</span>
@@ -1821,7 +1790,7 @@ class SEOAnalyzer {
                     </div>
                     <div class="data-item">
                         <span class="data-label">包含关键词:</span>
-                        <span class="data-value">${specificData.hasKeyword ? '✓ 是' : '✗ 否'}</span>
+                        <span class="data-value">${specificData.hasKeywords ? '✓ 是' : '✗ 否'}</span>
                     </div>
                     <div class="data-item">
                         <span class="data-label">特殊字符:</span>
@@ -1829,7 +1798,7 @@ class SEOAnalyzer {
                     </div>
                     <div class="data-item">
                         <span class="data-label">URL层级深度:</span>
-                        <span class="data-value">${specificData.urlDepth}层</span>
+                        <span class="data-value">${specificData.depth}层</span>
                     </div>
                 `;
                 break;
@@ -1841,7 +1810,7 @@ class SEOAnalyzer {
                     </div>
                     <div class="data-item">
                         <span class="data-label">阻止重要页面:</span>
-                        <span class="data-value">${specificData.blockingImportantPages}个</span>
+                        <span class="data-value">${specificData.blocksImportantPages ? '✗ 是' : '✓ 否'}</span>
                     </div>
                     <div class="data-item">
                         <span class="data-label">Sitemap引用:</span>
@@ -1849,7 +1818,7 @@ class SEOAnalyzer {
                     </div>
                     <div class="data-item">
                         <span class="data-label">阻止CSS文件:</span>
-                        <span class="data-value">${specificData.blockingCSS ? '✗ 是' : '✓ 否'}</span>
+                        <span class="data-value">${specificData.blocksCSS ? '✗ 是' : '✓ 否'}</span>
                     </div>
                 `;
                 break;
@@ -1869,7 +1838,7 @@ class SEOAnalyzer {
                     </div>
                     <div class="data-item">
                         <span class="data-label">包含图片信息:</span>
-                        <span class="data-value">${specificData.includesImages ? '✓ 是' : '✗ 否'}</span>
+                        <span class="data-value">${specificData.hasImages ? '✓ 是' : '✗ 否'}</span>
                     </div>
                 `;
                 break;
@@ -1881,6 +1850,22 @@ class SEOAnalyzer {
 
     delay(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
+    }
+}
+
+// 全局函数：切换计算详情显示
+function toggleCalculationDetails() {
+    const details = document.querySelector('.calculation-details');
+    const button = document.querySelector('.toggle-details-btn i');
+    
+    if (details.classList.contains('hidden')) {
+        details.classList.remove('hidden');
+        button.classList.remove('fa-chevron-down');
+        button.classList.add('fa-chevron-up');
+    } else {
+        details.classList.add('hidden');
+        button.classList.remove('fa-chevron-up');
+        button.classList.add('fa-chevron-down');
     }
 }
 

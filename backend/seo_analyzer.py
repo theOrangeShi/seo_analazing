@@ -365,14 +365,25 @@ class SEOAnalyzer:
                 src = img.get('src')
                 if src:
                     try:
-                        img_response = self.session.head(src, timeout=10)
+                        # 处理相对路径
+                        if src.startswith('//'):
+                            src = 'https:' + src
+                        elif src.startswith('/'):
+                            parsed_url = urlparse(response.url)
+                            src = f"{parsed_url.scheme}://{parsed_url.netloc}{src}"
+                        elif not src.startswith(('http://', 'https://')):
+                            src = urljoin(response.url, src)
+                        
+                        img_response = self.session.head(src, timeout=15, allow_redirects=True)
                         if img_response.status_code == 200:
                             img_size = int(img_response.headers.get('content-length', 0))
                             image_size_kb += img_size / 1024
                             if img_size > 100 * 1024:  # 大于100KB
                                 large_images += 1
-                    except:
-                        pass
+                    except Exception as e:
+                        logger.debug(f"图片大小获取失败 {src}: {e}")
+                        # 如果无法获取实际大小，使用估算值
+                        image_size_kb += 30  # 估算30KB
             
             # 分析CSS和JS
             css_size_kb = 0
@@ -383,24 +394,46 @@ class SEOAnalyzer:
                 href = link.get('href')
                 if href:
                     try:
-                        css_response = self.session.head(href, timeout=10)
+                        # 处理相对路径
+                        if href.startswith('//'):
+                            href = 'https:' + href
+                        elif href.startswith('/'):
+                            parsed_url = urlparse(response.url)
+                            href = f"{parsed_url.scheme}://{parsed_url.netloc}{href}"
+                        elif not href.startswith(('http://', 'https://')):
+                            href = urljoin(response.url, href)
+                        
+                        css_response = self.session.head(href, timeout=15, allow_redirects=True)
                         if css_response.status_code == 200:
                             css_size = int(css_response.headers.get('content-length', 0))
                             css_size_kb += css_size / 1024
-                    except:
-                        pass
+                    except Exception as e:
+                        logger.debug(f"CSS文件大小获取失败 {href}: {e}")
+                        # 如果无法获取实际大小，使用估算值
+                        css_size_kb += 50  # 估算50KB
             
             # JS文件
             for script in soup.find_all('script', src=True):
                 src = script.get('src')
                 if src:
                     try:
-                        js_response = self.session.head(src, timeout=10)
+                        # 处理相对路径
+                        if src.startswith('//'):
+                            src = 'https:' + src
+                        elif src.startswith('/'):
+                            parsed_url = urlparse(response.url)
+                            src = f"{parsed_url.scheme}://{parsed_url.netloc}{src}"
+                        elif not src.startswith(('http://', 'https://')):
+                            src = urljoin(response.url, src)
+                        
+                        js_response = self.session.head(src, timeout=15, allow_redirects=True)
                         if js_response.status_code == 200:
                             js_size = int(js_response.headers.get('content-length', 0))
                             js_size_kb += js_size / 1024
-                    except:
-                        pass
+                    except Exception as e:
+                        logger.debug(f"JS文件大小获取失败 {src}: {e}")
+                        # 如果无法获取实际大小，使用估算值
+                        js_size_kb += 100  # 估算100KB
             
             # 计算评分
             score = 100
